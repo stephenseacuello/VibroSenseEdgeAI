@@ -109,6 +109,22 @@ Import [`nodered/flows.json`](nodered/flows.json) once via the Node-RED UI (`htt
 1. **state-change detector** — drops messages with `confidence < 0.6` (ADR-0003), tracks last state per asset, emits an `AlarmV1` to `pdm/{asset_id}/alarm` on every real transition.
 2. **rolling availability** — 60-second rolling fraction of `HEALTHY` samples, emitted to `pdm/{asset_id}/oee` (retained).
 
+## Environment variables
+
+| Var | Default | Purpose |
+|---|---|---|
+| `MQTT_HOST` | `localhost` | broker address used by `ble_central` + `mqtt_to_sqlite` |
+| `MQTT_PORT` | `1883` | broker port |
+| `VIBROSENSE_DB` | `gateway/db/vibrosense.sqlite` | SQLite path the persister writes to |
+| `VIBROSENSE_ASSET_ID` | `fan-01` | asset_id stamped on every published `state` message |
+| `VIBROSENSE_DEVICE_NAME` | `VibroSense-Nano` | BLE local name the central scans for |
+
+Override at run time, e.g.:
+
+```bash
+VIBROSENSE_ASSET_ID=fan-02 python -m gateway.ble_central
+```
+
 ## Testing
 
 ```bash

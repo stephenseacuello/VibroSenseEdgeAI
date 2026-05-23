@@ -862,15 +862,16 @@ Authoritative log of irreversible-or-expensive-to-reverse decisions. New entries
 
 - [ ] Team Charter
 - [ ] Project Charter (final v6+)
-- [ ] Test Plan (final)
+- [ ] Test Plan (final) — draft v1 at [`docs/test-plan/test_plan_v1.md`](docs/test-plan/test_plan_v1.md)
 - [ ] **PDR Video** (Week 4) — tagged `v0.4-PDR`
 - [ ] **CDR Video** (Week 7) — tagged `v0.7-CDR`
 - [ ] **Final Demonstration Video** (Week 10)
 - [ ] **Final Project Report** (course formatting: cover page; Times New Roman 12 pt; double-spaced; 1-inch margins; lower-right page numbers; APA citations)
 - [ ] **Source code package** — tagged GitHub release `v1.0-Final`
-- [ ] Schematics & wiring diagrams (in `docs/schematics/`)
-- [ ] Lessons Learned (`docs/lessons-learned.md`)
+- [ ] Schematics & wiring diagrams (in [`docs/schematics/`](docs/schematics/))
+- [ ] Lessons Learned ([`docs/lessons-learned.md`](docs/lessons-learned.md))
 - [ ] README — build, schema, run procedure
+- [ ] Hardware bring-up procedure ([`docs/hardware_bringup.md`](docs/hardware_bringup.md))
 
 ---
 

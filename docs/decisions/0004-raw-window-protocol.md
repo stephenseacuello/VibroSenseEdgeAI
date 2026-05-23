@@ -13,9 +13,11 @@ JSON would be wasteful at this size. A fixed binary frame is denser, easier to p
 
 A new BLE characteristic on the VibroSense PDM service:
 
-| Name        | UUID                                      | Properties |
-|-------------|-------------------------------------------|------------|
-| `raw_window`| `12345678-1234-5678-1234-56789abcdef4`    | notify     |
+| Name        | UUID                                          | Properties |
+|-------------|-----------------------------------------------|------------|
+| `raw_window`| `7e5c0001-d9b7-4f12-8a6b-0a0b0c0d0e13`        | notify     |
+
+(Frozen alongside the rest of the service in [ADR-0001](0001-ble-payload-schema.md) on 2026-05-23.)
 
 **Frame layout (little-endian, packed):**
 
