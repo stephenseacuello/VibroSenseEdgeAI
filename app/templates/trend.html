@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Trend — {{ asset_id }}{% endblock %}
+{% block content %}
+<h2>Engineering Trend — {{ asset_id }} — last 5 minutes</h2>
+<div class="trend-wrap" data-asset-id="{{ asset_id }}">
+  <canvas id="chart" width="900" height="320" aria-label="state vs time chart"></canvas>
+  <p id="trend-status" class="muted">loading…</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script defer>
+  document.addEventListener("DOMContentLoaded", async () => {
+    const STATES = ["HEALTHY", "IMBALANCE", "LOOSENESS", "BEARING_FAULT"];
+    const WINDOW_MS = 5 * 60_000;
+    const asset = document.querySelector(".trend-wrap").dataset.assetId;
+    const statusEl = document.getElementById("trend-status");
+
+    const now  = new Date();
+    const from = new Date(now.getTime() - WINDOW_MS);
+
+    async function loadHistory() {
+      const url = `/api/v1/history?asset_id=${encodeURIComponent(asset)}` +
+                  `&from=${from.toISOString()}&to=${now.toISOString()}`;
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      return res.json();
+    }
+
+    function stateIndex(s) { return STATES.indexOf(s); }
+    function shortTs(ts)   { return ts.slice(11, 19); }
+
+    const rows = await loadHistory();
+    const labels = rows.map(r => shortTs(r.ts_utc));
+    const data   = rows.map(r => stateIndex(r.state));
+
+    const chart = new Chart(document.getElementById("chart"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{ label: "state", data, stepped: true, borderWidth: 2 }],
+      },
+      options: {
+        animation: false,
+        scales: {
+          y: {
+            min: -0.5, max: 3.5,
+            ticks: { callback: v => STATES[v] ?? "" },
+          },
+        },
+      },
+    });
+
+    statusEl.textContent = `${rows.length} samples loaded — live updates active`;
+
+    // Live updates: push new event, trim anything older than 5 min.
+    window.VibroSense.onState((s) => {
+      if (s.asset_id && s.asset_id !== asset) return;
+      const idx = stateIndex(s.state);
+      if (idx < 0) return;
+      chart.data.labels.push(shortTs(s.ts_utc));
+      chart.data.datasets[0].data.push(idx);
+
+      // Trim by time-budget: keep at most ~5 min of points
+      const cutoff = Date.now() - WINDOW_MS;
+      while (chart.data.labels.length > 1) {
+        // labels are HH:MM:SS only; use a parallel ts array? Simpler: cap on length.
+        if (chart.data.labels.length > 600) {
+          chart.data.labels.shift();
+          chart.data.datasets[0].data.shift();
+        } else break;
+      }
+      chart.update("none");
+      statusEl.textContent =
+        `${chart.data.labels.length} samples — last update ${shortTs(s.ts_utc)}`;
+    });
+  });
+</script>
+{% endblock %}

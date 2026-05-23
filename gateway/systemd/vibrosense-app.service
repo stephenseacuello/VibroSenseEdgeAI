@@ -1,0 +1,16 @@
+[Unit]
+Description=VibroSense Flask app (operator HMI + REST + WebSocket)
+After=network.target vibrosense-mqtt2db.service
+Requires=vibrosense-mqtt2db.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/VibroSenseEdgeAI
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/pi/VibroSenseEdgeAI/.venv/bin/python -m app.app
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

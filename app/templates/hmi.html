@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Operator — {{ asset_id }}{% endblock %}
+{% block content %}
+<section
+  id="tile"
+  class="tile state-unknown"
+  data-asset-id="{{ asset_id }}"
+  aria-live="polite"
+>
+  <div class="asset">{{ asset_id }}</div>
+  <div class="label" id="state-label">{{ state.state if state else "—" }}</div>
+  <div class="confidence">
+    confidence:
+    <span id="conf">{{ "%.2f"|format(state.confidence) if state else "—" }}</span>
+  </div>
+  <div class="ts">updated: <span id="ts">{{ state.ts_utc if state else "—" }}</span></div>
+</section>
+
+<div id="banner" class="banner hidden" role="alert">FAULT DETECTED — see Trend</div>
+<div id="stale" class="banner stale hidden" role="status">
+  No new data in 30 s — check the device / gateway.
+</div>
+
+<aside id="alarm-strip" class="alarm-strip {% if not alarm %}hidden{% endif %}" aria-live="polite">
+  <span class="alarm-strip__label">last alarm:</span>
+  <span class="alarm-strip__transition" id="alarm-transition">
+    {% if alarm -%}
+      {{ alarm.from_state or '—' }} → {{ alarm.to_state }}
+    {%- endif %}
+  </span>
+  <span class="alarm-strip__ts" id="alarm-ts">
+    {{ alarm.ts_utc if alarm else "" }}
+  </span>
+</aside>
+
+{% if state %}
+<script id="initial-state" type="application/json">
+{{ {
+    "state":      state.state,
+    "confidence": state.confidence,
+    "ts_utc":     state.ts_utc,
+    "asset_id":   state.asset_id
+  } | tojson
+}}
+</script>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script defer>
+  document.addEventListener("DOMContentLoaded", () => {
+    const tile   = document.getElementById("tile");
+    const label  = document.getElementById("state-label");
+    const conf   = document.getElementById("conf");
+    const ts     = document.getElementById("ts");
+    const banner = document.getElementById("banner");
+    const stale  = document.getElementById("stale");
+    const strip  = document.getElementById("alarm-strip");
+    const trans  = document.getElementById("alarm-transition");
+    const aTs    = document.getElementById("alarm-ts");
+    const asset  = tile.dataset.assetId;
+
+    let staleTimer = null;
+    function resetStale() {
+      stale.classList.add("hidden");
+      if (staleTimer) clearTimeout(staleTimer);
+      staleTimer = setTimeout(() => stale.classList.remove("hidden"), 30_000);
+    }
+
+    function classFor(state) {
+      if (state === "HEALTHY")       return "state-healthy";
+      if (state === "BEARING_FAULT") return "state-critical";
+      return "state-warning";
+    }
+
+    function applyState(s) {
+      if (s.asset_id && s.asset_id !== asset) return;
+      label.textContent = s.state;
+      conf.textContent  = (+s.confidence).toFixed(2);
+      ts.textContent    = s.ts_utc;
+      tile.className    = "tile " + classFor(s.state);
+      banner.classList.toggle("hidden", s.state === "HEALTHY");
+      resetStale();
+    }
+
+    function applyAlarm(a) {
+      if (a.asset_id && a.asset_id !== asset) return;
+      strip.classList.remove("hidden");
+      const from = a.from_state || a.from || "—";
+      const to = a.to_state || a.to;
+      trans.textContent = `${from} → ${to}`;
+      aTs.textContent = a.ts_utc;
+    }
+
+    // Server-rendered initial state
+    const initial = document.getElementById("initial-state");
+    if (initial) applyState(JSON.parse(initial.textContent));
+
+    // Live updates
+    window.VibroSense.onState(applyState);
+    window.VibroSense.onAlarm(applyAlarm);
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}500 — server error{% endblock %}
+{% block content %}
+<section class="error-page">
+  <h2>500 — server error</h2>
+  <p>Something went wrong on the gateway. Check the app log on the Pi.</p>
+  <p><a href="{{ url_for('hmi.operator') }}">Back to operator HMI</a></p>
+</section>
+{% endblock %}

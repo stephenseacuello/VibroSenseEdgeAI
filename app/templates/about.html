@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+{% block content %}
+<h2>Build info</h2>
+<dl class="kv">
+  <dt>App version</dt>     <dd>{{ app_version }}</dd>
+  <dt>Firmware SHA</dt>    <dd>{{ firmware_sha }}</dd>
+  <dt>Database</dt>        <dd>{{ db_path }}</dd>
+  <dt>Events persisted</dt><dd>{{ event_count }}</dd>
+  <dt>Latest event</dt>    <dd>{{ last_event_ts or "—" }}</dd>
+</dl>
+
+<h2>Endpoints</h2>
+<ul>
+  <li><a href="{{ url_for('hmi.operator') }}">/</a> — operator HMI</li>
+  <li><a href="{{ url_for('trend.trend') }}">/trend</a> — engineering trend view</li>
+  <li><code>/api/v1/state</code> — latest classification</li>
+  <li><code>/api/v1/history?from=…&amp;to=…</code> — time-series</li>
+  <li><code>/api/v1/oee?window=&lt;seconds&gt;</code> — availability KPI</li>
+  <li><code>/api/v1/assets</code> — known asset_ids</li>
+  <li><code>/healthz</code>, <code>/readyz</code> — health probes</li>
+</ul>
+{% endblock %}

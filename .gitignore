@@ -1,0 +1,38 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Data & artifacts (use Git LFS or out-of-band store)
+ml/data/raw/*.parquet
+ml/data/raw/*.meta.json
+ml/data/processed/
+ml/artifacts/*.keras
+ml/artifacts/*.h5
+ml/artifacts/*.tflite
+
+# Firmware build
+firmware/nano33/build/
+
+# Gateway runtime
+gateway/db/*.sqlite
+gateway/db/*.sqlite-journal
+
+# Logs
+*.log

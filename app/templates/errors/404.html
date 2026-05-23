@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}404 — not found{% endblock %}
+{% block content %}
+<section class="error-page">
+  <h2>404 — not found</h2>
+  <p>No route matches <code>{{ path }}</code>.</p>
+  <p><a href="{{ url_for('hmi.operator') }}">Back to operator HMI</a></p>
+</section>
+{% endblock %}

@@ -1,0 +1,16 @@
+[Unit]
+Description=VibroSense BLE central (bleak → MQTT)
+After=network.target bluetooth.target mosquitto.service
+Requires=mosquitto.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/VibroSenseEdgeAI
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/pi/VibroSenseEdgeAI/.venv/bin/python -m gateway.ble_central
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

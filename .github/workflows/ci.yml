@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  # Fast lane: everything that doesn't need TensorFlow. Runs on every PR.
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: |
+          pip install -U pip
+          pip install -e ".[dev]"
+      - name: Lint
+        run: |
+          ruff check .
+          black --check .
+      - name: Test
+        run: pytest -q
+
+  # Slow lane: full ML pipeline. Runs the synth → train → quantize → export → eval cycle.
+  # Pinned to the same TF version we'll target on-device tooling so any drift trips CI.
+  ml-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install (ml extra)
+        run: |
+          pip install -U pip
+          pip install -e ".[dev,ml]"
+      - name: TF-gated tests
+        run: pytest -q ml/tests/test_train_cnn.py ml/tests/test_eval.py ml/tests/test_quantize_export.py
+      - name: Full pipeline smoke
+        run: make ml-pipeline
+      - name: Upload generated model.h
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-h
+          path: firmware/nano33/model/model.h
+
+  # Firmware sanity build. TFLite Micro vendoring is TBD — for now we just confirm
+  # the sketch compiles cleanly against the Arduino mbed_nano core + libraries.
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v1
+      - name: Install Arduino core + libraries
+        run: |
+          arduino-cli core update-index
+          arduino-cli core install arduino:mbed_nano
+          arduino-cli lib install ArduinoBLE
+          arduino-cli lib install "Arduino_LSM9DS1"
+          arduino-cli lib install --git-url https://github.com/tensorflow/tflite-micro-arduino-examples
+      - name: Compile firmware (strict)
+        run: arduino-cli compile --fqbn arduino:mbed_nano:nano33ble firmware/nano33 --warnings default
+      - name: Report sketch size
+        run: arduino-cli compile --fqbn arduino:mbed_nano:nano33ble firmware/nano33 --show-properties | grep -E "build.|size" || true

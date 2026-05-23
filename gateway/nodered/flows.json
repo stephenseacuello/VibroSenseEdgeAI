@@ -1,0 +1,76 @@
+[
+  {
+    "id": "tab.pdm",
+    "type": "tab",
+    "label": "VibroSense PDM",
+    "disabled": false,
+    "info": "State-change alarms + rolling availability KPI. See PROJECT_PLAN.md §12.4."
+  },
+  {
+    "id": "broker.local",
+    "type": "mqtt-broker",
+    "name": "local",
+    "broker": "localhost",
+    "port": "1883",
+    "clientid": "node-red",
+    "autoConnect": true,
+    "usetls": false,
+    "keepalive": "30"
+  },
+  {
+    "id": "mqtt.in.state",
+    "type": "mqtt in",
+    "z": "tab.pdm",
+    "name": "state in",
+    "topic": "pdm/+/state",
+    "qos": "0",
+    "datatype": "json",
+    "broker": "broker.local",
+    "x": 140, "y": 100,
+    "wires": [["fn.state_change", "fn.oee_window"]]
+  },
+  {
+    "id": "fn.state_change",
+    "type": "function",
+    "z": "tab.pdm",
+    "name": "state-change detector (AlarmV1)",
+    "func": "// Suppress flicker (ADR-0003: confidence floor 0.6) and emit only transitions\n// as AlarmV1 payloads. The mqtt_to_sqlite gateway persists these to alarms.\nconst FLOOR = 0.6;\nconst p = msg.payload;\nif (p == null || p.confidence == null || p.confidence < FLOOR) return null;\nconst key = p.asset_id || 'unknown';\nconst last = context.get('last_' + key);\nif (p.state === last) return null;\ncontext.set('last_' + key, p.state);\nmsg.topic = `pdm/${key}/alarm`;\nmsg.payload = {\n  schema_ver: 1,\n  asset_id: key,\n  ts_utc: p.ts_utc,\n  from: last || null,\n  to: p.state,\n  confidence: p.confidence\n};\nreturn msg;",
+    "outputs": 1,
+    "x": 400, "y": 80,
+    "wires": [["mqtt.out.alarm"]]
+  },
+  {
+    "id": "fn.oee_window",
+    "type": "function",
+    "z": "tab.pdm",
+    "name": "rolling availability",
+    "func": "// 60-second rolling fraction of HEALTHY samples per asset.\nconst WINDOW_MS = 60 * 1000;\nconst p = msg.payload;\nconst key = p.asset_id || 'unknown';\nconst now = Date.parse(p.ts_utc) || Date.now();\nconst buf = context.get('buf_' + key) || [];\nbuf.push({ ts: now, healthy: p.state === 'HEALTHY' ? 1 : 0 });\nwhile (buf.length && now - buf[0].ts > WINDOW_MS) buf.shift();\ncontext.set('buf_' + key, buf);\nconst h = buf.reduce((a, b) => a + b.healthy, 0);\nmsg.topic = `pdm/${key}/oee`;\nmsg.payload = { window_s: WINDOW_MS / 1000, availability: h / buf.length, samples: buf.length };\nreturn msg;",
+    "outputs": 1,
+    "x": 400, "y": 160,
+    "wires": [["mqtt.out.oee"]]
+  },
+  {
+    "id": "mqtt.out.alarm",
+    "type": "mqtt out",
+    "z": "tab.pdm",
+    "name": "alarm out",
+    "topic": "",
+    "qos": "1",
+    "retain": "true",
+    "broker": "broker.local",
+    "x": 700, "y": 80,
+    "wires": []
+  },
+  {
+    "id": "mqtt.out.oee",
+    "type": "mqtt out",
+    "z": "tab.pdm",
+    "name": "oee out",
+    "topic": "",
+    "qos": "0",
+    "retain": "true",
+    "broker": "broker.local",
+    "x": 700, "y": 160,
+    "wires": []
+  }
+]

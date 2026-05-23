@@ -1,0 +1,16 @@
+[Unit]
+Description=VibroSense MQTT → SQLite persister
+After=network.target mosquitto.service
+Requires=mosquitto.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/VibroSenseEdgeAI
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/pi/VibroSenseEdgeAI/.venv/bin/python -m gateway.mqtt_to_sqlite
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

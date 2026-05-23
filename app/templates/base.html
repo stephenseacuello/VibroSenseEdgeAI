@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}VibroSense Edge AI{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>VibroSense Edge AI</h1>
+    <nav aria-label="primary">
+      <a href="{{ url_for('hmi.operator') }}">Operator</a>
+      <a href="{{ url_for('trend.trend') }}">Trend</a>
+      <a href="{{ url_for('about.about') }}">About</a>
+    </nav>
+    <span class="conn" id="conn" title="WebSocket connection status">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="label" id="conn-label">connecting…</span>
+    </span>
+  </header>
+  <main>{% block content %}{% endblock %}</main>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
